@@ -1,0 +1,165 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/auth_provider.dart';
+import '../../domain/entities/user.dart' as domain;
+import 'generic_screen.dart';
+import 'welcome_screen.dart';
+// widget imports removed (unused) to clean warnings
+import 'login/login_screen.dart';
+// role-specific login screens unused (we use unified login)
+import 'home/home_siswa_screen.dart';
+// import 'home/home_admin_screen.dart';
+import 'admin/admin_dashboard.dart';
+import 'admin/admin_products.dart';
+import 'admin/admin_users.dart';
+// super admin home unused currently
+
+enum AppScreen {
+  welcome,
+  login,
+  siswaHome,
+  siswaKatalog,
+  siswaPesanan,
+  siswaProfil,
+  siswaCheckout,
+  siswaQris,
+  adminDashboard,
+  adminScanner,
+  adminAddUser,
+  adminProducts,
+  hubinDashboard,
+  hubinAdmins,
+  hubinReports,
+}
+
+class AppShell extends StatefulWidget {
+  const AppShell({super.key});
+
+  @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell> {
+  AppScreen screen = AppScreen.welcome;
+  final List<AppScreen> history = [];
+
+  void go(AppScreen to) {
+    setState(() {
+      history.add(screen);
+      screen = to;
+    });
+  }
+
+  void back() {
+    setState(() {
+      if (history.isNotEmpty) {
+        screen = history.removeLast();
+      }
+    });
+  }
+
+  Widget renderScreen() {
+    final auth = Provider.of<AuthProvider>(context);
+    AppScreen effective = screen;
+    if (auth.status == AuthStatus.authenticated && auth.user != null) {
+      final r = auth.user!.role;
+      if (screen == AppScreen.welcome || screen == AppScreen.login) {
+        if (r == domain.Role.admin) {
+          effective = AppScreen.adminDashboard;
+        } else if (r == domain.Role.superAdmin) {
+          effective = AppScreen.hubinDashboard;
+        } else {
+          effective = AppScreen.siswaHome;
+        }
+      }
+    }
+
+    switch (effective) {
+      case AppScreen.welcome:
+        return WelcomeScreenWidget(onEnter: () => go(AppScreen.login));
+      case AppScreen.login:
+        return LoginScreen(
+          go: (s) {
+            if (s == 'siswa') go(AppScreen.siswaHome);
+            if (s == 'admin') go(AppScreen.adminDashboard);
+            if (s == 'hubin') go(AppScreen.hubinDashboard);
+          },
+          back: back,
+        );
+      case AppScreen.siswaHome:
+        return HomeSiswaScreen(
+          go: (to) {
+            if (to == 'siswa-katalog') go(AppScreen.siswaKatalog);
+            if (to == 'siswa-pesanan') go(AppScreen.siswaPesanan);
+            if (to == 'siswa-profil') go(AppScreen.siswaProfil);
+            if (to == 'siswa-checkout') go(AppScreen.siswaCheckout);
+            if (to == 'siswa-qris') go(AppScreen.siswaQris);
+          },
+          onLoginRequest: () => go(AppScreen.login),
+        );
+      case AppScreen.siswaKatalog:
+        return GenericScreen(
+          title: 'Katalog Produk - Siswa',
+          onLogin: () => go(AppScreen.login),
+        );
+      case AppScreen.siswaPesanan:
+        return GenericScreen(
+          title: 'Pesanan Saya',
+          onLogin: () => go(AppScreen.login),
+        );
+      case AppScreen.siswaProfil:
+        return GenericScreen(
+          title: 'Profil Saya',
+          onLogin: () => go(AppScreen.login),
+        );
+      case AppScreen.siswaCheckout:
+        return GenericScreen(
+          title: 'Checkout',
+          onLogin: () => go(AppScreen.login),
+          child: ElevatedButton(
+            onPressed: () => go(AppScreen.siswaQris),
+            child: const Text('Bayar (QRIS)'),
+          ),
+        );
+      case AppScreen.siswaQris:
+        return GenericScreen(
+          title: 'QRIS Pembayaran',
+          onLogin: () => go(AppScreen.login),
+        );
+      case AppScreen.adminDashboard:
+        return AdminDashboardScreen();
+      case AppScreen.adminScanner:
+        return GenericScreen(
+          title: 'Scanner',
+          onLogin: () => go(AppScreen.login),
+        );
+      case AppScreen.adminAddUser:
+        return AdminUsersScreen();
+      case AppScreen.adminProducts:
+        return AdminProductsScreen();
+      case AppScreen.hubinDashboard:
+        return GenericScreen(
+          title: 'Overview Hubin',
+          onLogin: () => go(AppScreen.login),
+        );
+      case AppScreen.hubinAdmins:
+        return GenericScreen(
+          title: 'Kelola Admin',
+          onLogin: () => go(AppScreen.login),
+        );
+      case AppScreen.hubinReports:
+        return GenericScreen(
+          title: 'Laporan',
+          onLogin: () => go(AppScreen.login),
+        );
+      default:
+        return GenericScreen(title: 'Welcome');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: renderScreen());
+  }
+}
