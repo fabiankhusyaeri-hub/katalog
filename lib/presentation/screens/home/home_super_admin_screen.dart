@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/auth_provider.dart';
 import '../admin/admin_users.dart';
+import '../app_shell.dart';
 import '../generic_screen.dart';
 import '../super_admin/super_admin_reports_screen.dart';
 
@@ -44,8 +47,41 @@ class HomeSuperAdminScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Logout',
             icon: const Icon(Icons.logout_outlined),
-            onPressed: () {
-              Navigator.of(context).pop();
+            onPressed: () async {
+              if (!context.mounted) return;
+              final navigator = Navigator.of(context);
+              final auth = context.read<AuthProvider>();
+
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Keluar akun?'),
+                  content: const Text(
+                    'Apakah Anda yakin ingin logout dari super admin?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: const Text('Batal'),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: const Text('Ya, Logout'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm != true) return;
+              await auth.logout();
+              if (!context.mounted) return;
+              navigator.pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const AppShell()),
+                (route) => false,
+              );
             },
           ),
         ],
