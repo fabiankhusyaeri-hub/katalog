@@ -25,6 +25,20 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final snapshot = await FirebaseFirestore.instance.collection('users').get();
     return snapshot.docs.map((doc) {
       final data = doc.data();
+      final extraFields = Map<String, dynamic>.from(data)
+        ..removeWhere(
+          (key, value) => [
+            'name',
+            'email',
+            'role',
+            'phone',
+            'address',
+            'status',
+            'createdAt',
+            'updatedAt',
+          ].contains(key),
+        );
+
       return {
         'id': doc.id,
         'name': (data['name'] ?? data['email'] ?? 'User').toString(),
@@ -34,6 +48,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         'address': (data['address'] ?? data['alamat'] ?? '').toString(),
         'status': (data['status'] ?? 'aktif').toString(),
         'createdAt': data['createdAt'],
+        'extra': extraFields,
       };
     }).toList();
   }
@@ -62,6 +77,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       MapEntry('Tanggal Daftar', _formatDate(user['createdAt'])),
     ];
 
+    final extraFields = (user['extra'] as Map<String, dynamic>? ?? const {});
+
     showDialog(
       context: context,
       builder: (ctx) {
@@ -83,26 +100,44 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: details.map(
-                  (entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 120,
-                          child: Text(
-                            '${entry.key}:',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
+                children: [
+                  ...details.map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 120,
+                            child: Text(
+                              '${entry.key}:',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                        Expanded(child: Text(entry.value)),
-                      ],
+                          Expanded(child: Text(entry.value)),
+                        ],
+                      ),
                     ),
                   ),
-                ).toList(),
+                  if (extraFields.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Detail Tambahan',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: extraFields.entries.map((entry) {
+                        final value = entry.value?.toString() ?? '-';
+                        return Chip(label: Text('${entry.key}: $value'));
+                      }).toList(),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
@@ -268,10 +303,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             return const Center(child: Text('Belum ada user di Firestore'));
           }
 
-          return ListView.separated(
+          return ListView.builder(
             padding: const EdgeInsets.all(12),
             itemCount: users.length,
-            separatorBuilder: (context, index) => const Divider(),
             itemBuilder: (context, index) {
               final user = users[index];
               final id = user['id'] ?? '';
@@ -279,67 +313,106 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               final initials = name.substring(0, 1).toUpperCase();
               final role = user['role'] ?? 'siswa';
 
-              return ListTile(
-                onTap: () => _showUserDetail(user),
-                leading: CircleAvatar(child: Text(initials)),
-                title: Text(name),
-                subtitle: Text(user['email'] ?? ''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    PopupMenuButton<String>(
-                      onSelected: (value) async {
-                        if (id.isEmpty) return;
-                        if (value == 'delete') {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Hapus user?'),
-                              content: const Text(
-                                'Akun ini akan dihapus dari Firestore.',
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _showUserDetail(user),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.blue.shade100,
+                          child: Text(
+                            initials,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(false),
-                                  child: const Text('Batal'),
-                                ),
-                                FilledButton(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.red,
+                              const SizedBox(height: 4),
+                              Text(
+                                user['email'] ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          onSelected: (value) async {
+                            if (id.isEmpty) return;
+                            if (value == 'delete') {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Hapus user?'),
+                                  content: const Text(
+                                    'Akun ini akan dihapus dari Firestore.',
                                   ),
-                                  onPressed: () => Navigator.of(ctx).pop(true),
-                                  child: const Text('Hapus'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(false),
+                                      child: const Text('Batal'),
+                                    ),
+                                    FilledButton(
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(true),
+                                      child: const Text('Hapus'),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              );
+                              if (confirm == true) await _deleteUser(id);
+                              return;
+                            }
+                            await _updateRole(id, value);
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'admin',
+                              child: Text('Jadikan Admin'),
                             ),
-                          );
-                          if (confirm == true) await _deleteUser(id);
-                          return;
-                        }
-                        await _updateRole(id, value);
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'admin',
-                          child: Text('Jadikan Admin'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'siswa',
-                          child: Text('Jadikan Siswa'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Hapus User'),
+                            const PopupMenuItem(
+                              value: 'siswa',
+                              child: Text('Jadikan Siswa'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Hapus User'),
+                            ),
+                          ],
+                          child: Chip(
+                            label: Text(role),
+                            backgroundColor: role.toLowerCase() == 'admin'
+                                ? Colors.red.shade100
+                                : Colors.blue.shade100,
+                          ),
                         ),
                       ],
-                      child: Chip(
-                        label: Text(role),
-                        backgroundColor: role.toLowerCase() == 'admin'
-                            ? Colors.red.shade100
-                            : Colors.blue.shade100,
-                      ),
                     ),
-                  ],
+                  ),
                 ),
               );
             },

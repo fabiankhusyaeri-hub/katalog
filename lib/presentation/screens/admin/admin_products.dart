@@ -18,6 +18,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       return {
         'id': doc.id,
         'name': (data['name'] ?? 'Produk').toString(),
+        'category': (data['category'] ?? 'Umum').toString(),
+        'description': (data['description'] ?? '').toString(),
         'stock': (data['stock'] ?? 0).toString(),
         'price': (data['price'] ?? 0).toString(),
       };
@@ -29,6 +31,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(
       text: product?['name']?.toString() ?? '',
+    );
+    final categoryController = TextEditingController(
+      text: product?['category']?.toString() ?? 'Umum',
+    );
+    final descriptionController = TextEditingController(
+      text: product?['description']?.toString() ?? '',
     );
     final stockController = TextEditingController(
       text: product?['stock']?.toString() ?? '',
@@ -76,6 +84,25 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                           },
                         ),
                         const SizedBox(height: 12),
+                        TextFormField(
+                          controller: categoryController,
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Kategori',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.category_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: descriptionController,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Deskripsi',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.description_outlined),
+                          ),
+                        ),
                         const SizedBox(height: 16),
                         Row(
                           children: [
@@ -131,6 +158,10 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                     if (formKey.currentState?.validate() ?? false) {
                       Navigator.of(ctx).pop({
                         'name': nameController.text.trim(),
+                        'category': categoryController.text.trim().isEmpty
+                            ? 'Umum'
+                            : categoryController.text.trim(),
+                        'description': descriptionController.text.trim(),
                         'stock': stockController.text.trim(),
                         'price': priceController.text.trim(),
                       });
@@ -150,6 +181,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
     final payload = {
       'name': result['name'] ?? '',
+      'category': result['category'] ?? 'Umum',
+      'description': result['description'] ?? '',
       'stock': int.tryParse(result['stock'] ?? '') ?? 0,
       'price': int.tryParse(result['price'] ?? '') ?? 0,
     };
@@ -222,8 +255,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -251,68 +288,98 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Row(
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
                               children: [
-                                Expanded(
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                   child: Text(
-                                    'Stok: ${product['stock']} • Harga: Rp${product['price']}',
-                                    style: const TextStyle(
+                                    'Stok ${product['stock']}',
+                                    style: TextStyle(
+                                      color: Colors.green.shade700,
                                       fontWeight: FontWeight.w600,
+                                      fontSize: 12,
                                     ),
                                   ),
                                 ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      tooltip: 'Edit produk',
-                                      icon: const Icon(Icons.edit_outlined),
-                                      onPressed: () =>
-                                          _showProductDialog(product: product),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.shade50,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'Rp${product['price']}',
+                                    style: TextStyle(
+                                      color: Colors.orange.shade800,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
                                     ),
-                                    IconButton(
-                                      tooltip: 'Hapus produk',
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
-                                      ),
-                                      onPressed: () async {
-                                        final confirm = await showDialog<bool>(
-                                          context: context,
-                                          builder: (ctx) => AlertDialog(
-                                            title: const Text('Hapus produk?'),
-                                            content: const Text(
-                                              'Produk ini akan dihapus dari Firestore.',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.of(
-                                                  ctx,
-                                                ).pop(false),
-                                                child: const Text('Batal'),
-                                              ),
-                                              FilledButton(
-                                                style: FilledButton.styleFrom(
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                                onPressed: () =>
-                                                    Navigator.of(ctx).pop(true),
-                                                child: const Text('Hapus'),
-                                              ),
-                                            ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                IconButton(
+                                  tooltip: 'Edit produk',
+                                  icon: const Icon(Icons.edit_outlined),
+                                  onPressed: () =>
+                                      _showProductDialog(product: product),
+                                ),
+                                IconButton(
+                                  tooltip: 'Hapus produk',
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Hapus produk?'),
+                                        content: const Text(
+                                          'Produk ini akan dihapus dari Firestore.',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(ctx).pop(false),
+                                            child: const Text('Batal'),
                                           ),
-                                        );
+                                          FilledButton(
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                            ),
+                                            onPressed: () =>
+                                                Navigator.of(ctx).pop(true),
+                                            child: const Text('Hapus'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
 
-                                        if (confirm != true) return;
-                                        await FirebaseFirestore.instance
-                                            .collection('products')
-                                            .doc(product['id'] as String)
-                                            .delete();
-                                        if (mounted) setState(() {});
-                                      },
-                                    ),
-                                  ],
+                                    if (confirm != true) return;
+                                    await FirebaseFirestore.instance
+                                        .collection('products')
+                                        .doc(product['id'] as String)
+                                        .delete();
+                                    if (mounted) setState(() {});
+                                  },
                                 ),
                               ],
                             ),
