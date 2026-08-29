@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart';
+// provider already imported above
 import 'presentation/screens/app_shell.dart';
 import 'presentation/providers/auth_provider.dart';
+import 'presentation/providers/cart_provider.dart';
+import 'package:provider/provider.dart';
 import 'core/app_theme.dart';
 import 'firebase_options.dart';
 
@@ -17,8 +19,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider.create(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider.create()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+      ],
       child: MaterialApp(
         title: 'Katalog App',
         debugShowCheckedModeBanner: false,

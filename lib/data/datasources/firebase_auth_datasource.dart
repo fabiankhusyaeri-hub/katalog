@@ -33,10 +33,15 @@ class FirebaseAuthDataSource {
           .doc(uid)
           .get();
       final data = doc.data();
-      final r = (data?['role'] as String?) ?? 'siswa';
-      // accept both snake_case and camelCase stored values
-      if (r == 'admin') return UserRole.admin;
-      if (r == 'super_admin' || r == 'superAdmin') return UserRole.superAdmin;
+      final r = ((data?['role'] as String?) ?? 'siswa').trim().toLowerCase();
+
+      if (r == 'super_admin' ||
+          r == 'superadmin' ||
+          r == 'super admin' ||
+          r == 'hubin') {
+        return UserRole.superAdmin;
+      }
+      if (r == 'admin' || r == 'administrator') return UserRole.admin;
       return UserRole.siswa;
     } catch (e) {
       return UserRole.siswa;

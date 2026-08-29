@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../../domain/entities/user.dart' as domain;
-import 'register_screen.dart';
 import 'reset_password_screen.dart';
 
 typedef GoCallback = void Function(String role);
@@ -18,7 +17,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String _role = 'siswa';
+  final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _loading = false;
@@ -30,29 +29,20 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  domain.Role _mapRole(String r) {
-    switch (r) {
-      case 'admin':
-        return domain.Role.admin;
-      case 'hubin':
-        return domain.Role.superAdmin;
-      default:
-        return domain.Role.siswa;
-    }
-  }
-
   Future<void> _submit() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final goCallback = widget.go;
     setState(() => _loading = true);
     try {
-      await auth.login(
-        email: _emailCtrl.text.trim(),
-        password: _passCtrl.text,
-        role: _mapRole(_role),
-      );
+      await auth.login(email: _emailCtrl.text.trim(), password: _passCtrl.text);
       if (!mounted) return;
-      goCallback(_role);
+      final r = auth.user?.role;
+      widget.go(
+        r == domain.Role.admin
+            ? 'admin'
+            : r == domain.Role.superAdmin
+            ? 'hubin'
+            : 'siswa',
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -65,13 +55,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _googleSignIn() async {
     setState(() => _loading = true);
-    final goCallback = widget.go;
     try {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       await auth.signInWithGoogle();
       final role = auth.user?.role;
       if (!mounted) return;
-      goCallback(
+      widget.go(
         role == domain.Role.admin
             ? 'admin'
             : role == domain.Role.superAdmin
@@ -92,92 +81,119 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Masuk',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              ToggleButtons(
-                isSelected: [
-                  _role == 'siswa',
-                  _role == 'admin',
-                  _role == 'hubin',
-                ],
-                onPressed: (i) => setState(
-                  () => _role = i == 0
-                      ? 'siswa'
-                      : i == 1
-                      ? 'admin'
-                      : 'hubin',
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Card(
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                children: const [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('Siswa'),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('Admin'),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('Hubin'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _emailCtrl,
-                decoration: const InputDecoration(labelText: 'Email / NIS'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _passCtrl,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
-              ),
-              const SizedBox(height: 16),
-              _loading
-                  ? const CircularProgressIndicator()
-                  : Column(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        ElevatedButton(
-                          onPressed: _submit,
-                          child: const Text('Masuk'),
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  RegisterScreen(goBack: (r) => widget.go(r)),
-                            ),
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          child: const Icon(
+                            Icons.school,
+                            color: Colors.white,
+                            size: 36,
                           ),
-                          child: const Text('Daftar'),
                         ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const ResetPasswordScreen(),
-                            ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Masuk ke Katalog Sekolah',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 18),
+                        TextFormField(
+                          controller: _emailCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Email atau NIS',
+                            prefixIcon: Icon(Icons.person),
                           ),
-                          child: const Text('Lupa password?'),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Masukkan email atau NIS'
+                              : null,
                         ),
-                        const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          onPressed: _googleSignIn,
-                          icon: const Icon(Icons.login),
-                          label: const Text('Masuk dengan Google'),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _passCtrl,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(Icons.lock),
+                          ),
+                          validator: (v) => (v == null || v.length < 6)
+                              ? 'Password minimal 6 karakter'
+                              : null,
                         ),
+                        const SizedBox(height: 18),
+                        _loading
+                            ? const Center(child: CircularProgressIndicator())
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      if (_formKey.currentState?.validate() ??
+                                          false) {
+                                        _submit();
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Masuk',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  OutlinedButton(
+                                    onPressed: _googleSignIn,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: const [
+                                        Icon(Icons.login),
+                                        SizedBox(width: 8),
+                                        Text('Masuk dengan Google'),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const ResetPasswordScreen(),
+                                      ),
+                                    ),
+                                    child: const Text('Lupa password?'),
+                                  ),
+                                ],
+                              ),
                       ],
                     ),
-            ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),

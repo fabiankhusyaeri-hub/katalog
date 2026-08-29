@@ -8,11 +8,13 @@ import 'welcome_screen.dart';
 // widget imports removed (unused) to clean warnings
 import 'login/login_screen.dart';
 // role-specific login screens unused (we use unified login)
-import 'home/home_siswa_screen.dart';
+// home_siswa_screen unused; replaced by MainNavigationScreen
 // import 'home/home_admin_screen.dart';
 import 'admin/admin_dashboard.dart';
 import 'admin/admin_products.dart';
 import 'admin/admin_users.dart';
+import 'home/home_super_admin_screen.dart';
+import 'main_navigation_screen.dart';
 // super admin home unused currently
 
 enum AppScreen {
@@ -44,6 +46,15 @@ class _AppShellState extends State<AppShell> {
   AppScreen screen = AppScreen.welcome;
   final List<AppScreen> history = [];
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      auth.restoreSession();
+    });
+  }
+
   void go(AppScreen to) {
     setState(() {
       history.add(screen);
@@ -64,14 +75,12 @@ class _AppShellState extends State<AppShell> {
     AppScreen effective = screen;
     if (auth.status == AuthStatus.authenticated && auth.user != null) {
       final r = auth.user!.role;
-      if (screen == AppScreen.welcome || screen == AppScreen.login) {
-        if (r == domain.Role.admin) {
-          effective = AppScreen.adminDashboard;
-        } else if (r == domain.Role.superAdmin) {
-          effective = AppScreen.hubinDashboard;
-        } else {
-          effective = AppScreen.siswaHome;
-        }
+      if (r == domain.Role.superAdmin) {
+        effective = AppScreen.hubinDashboard;
+      } else if (r == domain.Role.admin) {
+        effective = AppScreen.adminDashboard;
+      } else if (screen == AppScreen.welcome || screen == AppScreen.login) {
+        effective = AppScreen.siswaHome;
       }
     }
 
@@ -83,21 +92,12 @@ class _AppShellState extends State<AppShell> {
           go: (s) {
             if (s == 'siswa') go(AppScreen.siswaHome);
             if (s == 'admin') go(AppScreen.adminDashboard);
-            if (s == 'hubin') go(AppScreen.hubinDashboard);
+            if (s == 'hubin' || s == 'superAdmin') go(AppScreen.hubinDashboard);
           },
           back: back,
         );
       case AppScreen.siswaHome:
-        return HomeSiswaScreen(
-          go: (to) {
-            if (to == 'siswa-katalog') go(AppScreen.siswaKatalog);
-            if (to == 'siswa-pesanan') go(AppScreen.siswaPesanan);
-            if (to == 'siswa-profil') go(AppScreen.siswaProfil);
-            if (to == 'siswa-checkout') go(AppScreen.siswaCheckout);
-            if (to == 'siswa-qris') go(AppScreen.siswaQris);
-          },
-          onLoginRequest: () => go(AppScreen.login),
-        );
+        return const MainNavigationScreen();
       case AppScreen.siswaKatalog:
         return GenericScreen(
           title: 'Katalog Produk - Siswa',
@@ -139,10 +139,7 @@ class _AppShellState extends State<AppShell> {
       case AppScreen.adminProducts:
         return AdminProductsScreen();
       case AppScreen.hubinDashboard:
-        return GenericScreen(
-          title: 'Overview Hubin',
-          onLogin: () => go(AppScreen.login),
-        );
+        return const HomeSuperAdminScreen();
       case AppScreen.hubinAdmins:
         return GenericScreen(
           title: 'Kelola Admin',
@@ -153,8 +150,6 @@ class _AppShellState extends State<AppShell> {
           title: 'Laporan',
           onLogin: () => go(AppScreen.login),
         );
-      default:
-        return GenericScreen(title: 'Welcome');
     }
   }
 

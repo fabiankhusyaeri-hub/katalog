@@ -11,7 +11,6 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<domain.User> login({
     required String email,
     required String password,
-    required domain.Role role,
   }) async {
     final UserModel u = await _ds.signIn(email, password);
     // map data model role to domain.Role (basic mapping)
