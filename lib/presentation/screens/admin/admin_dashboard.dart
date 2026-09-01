@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../app_shell.dart';
+import 'admin_information.dart';
 import 'admin_products.dart';
 import 'admin_users.dart';
 
@@ -250,10 +251,12 @@ class AdminDashboardScreen extends StatelessWidget {
               const SizedBox(height: 16),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final cardWidth = (constraints.maxWidth - 12) / 2;
+                  final cardWidth = (constraints.maxWidth - 24) / 3;
                   return SizedBox(
-                    height: 120,
-                    child: Row(
+                    height: 150,
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
                       children: [
                         SizedBox(
                           width: cardWidth,
@@ -271,7 +274,6 @@ class AdminDashboardScreen extends StatelessWidget {
                             },
                           ),
                         ),
-                        const SizedBox(width: 12),
                         SizedBox(
                           width: cardWidth,
                           child: _AdminQuickActionCard(
@@ -283,6 +285,23 @@ class AdminDashboardScreen extends StatelessWidget {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (_) => const AdminProductsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        SizedBox(
+                          width: cardWidth,
+                          child: _AdminQuickActionCard(
+                            icon: Icons.info_outline_rounded,
+                            title: 'Kelola Informasi',
+                            subtitle: 'Form murid',
+                            color: Colors.purple,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const AdminInformationScreen(),
                                 ),
                               );
                             },

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../../domain/entities/user.dart' as domain;
+import '../student/student_form_screen.dart';
 import 'reset_password_screen.dart';
 
 typedef GoCallback = void Function(String role);
@@ -185,6 +186,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     ),
                                     child: const Text('Lupa password?'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const StudentFormScreen(),
+                                      ),
+                                    ),
+                                    child: const Text('Isi Form Murid'),
                                   ),
                                 ],
                               ),
