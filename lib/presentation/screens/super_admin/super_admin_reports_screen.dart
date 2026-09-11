@@ -405,7 +405,7 @@ class _SuperAdminReportsScreenState extends State<SuperAdminReportsScreen> {
                         : Colors.blue;
 
                     return Card(
-                      child: ListTile(
+                      child: InkWell(
                         onTap: () {
                           final orderId = item['id'] as String? ?? '';
                           if (orderId.isEmpty) return;
@@ -416,25 +416,77 @@ class _SuperAdminReportsScreenState extends State<SuperAdminReportsScreen> {
                             ),
                           );
                         },
-                        title: Text(
-                          'Order #${item['id']?.toString().substring(0, 6) ?? '---'}',
-                        ),
-                        subtitle: Text(
-                          '${item['items'] ?? '-'}\n${createdAt != null ? _formatDate(createdAt.toLocal()) : '-'}',
-                        ),
-                        isThreeLine: true,
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Chip(
-                              label: Text(status),
-                              backgroundColor: badgeColor.withValues(
-                                alpha: 0.12,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Order #${item['id']?.toString().substring(0, 6) ?? '---'}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      item['items'] ?? '-',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade300,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      createdAt != null
+                                          ? _formatDate(createdAt.toLocal())
+                                          : '-',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text('Rp${item['total']}'),
-                          ],
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: badgeColor.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: Text(
+                                      status,
+                                      style: TextStyle(
+                                        color: badgeColor,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Rp${item['total']}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );

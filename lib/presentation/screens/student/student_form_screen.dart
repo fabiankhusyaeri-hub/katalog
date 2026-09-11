@@ -17,20 +17,21 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
   final _addressController = TextEditingController();
   bool _isSubmitting = false;
 
-  Future<List<Map<String, dynamic>>> _loadInformation() async {
-    final snapshot = await FirebaseFirestore.instance
+  Stream<List<Map<String, dynamic>>> _loadInformation() {
+    return FirebaseFirestore.instance
         .collection('student_form_info')
         .orderBy('createdAt', descending: true)
-        .get();
-
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
-      return {
-        'id': doc.id,
-        'title': (data['title'] ?? 'Informasi').toString(),
-        'content': (data['content'] ?? '').toString(),
-      };
-    }).toList();
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            return {
+              'id': doc.id,
+              'title': (data['title'] ?? 'Informasi').toString(),
+              'content': (data['content'] ?? '').toString(),
+            };
+          }).toList();
+        });
   }
 
   Future<void> _submitForm() async {
@@ -80,14 +81,20 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Form Murid')),
       body: SafeArea(
-        child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _loadInformation(),
+        child: StreamBuilder<List<Map<String, dynamic>>>(
+          stream: _loadInformation(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            final infoList = snapshot.data ?? const [];
+            if (snapshot.hasError) {
+              return Center(
+                child: Text('Gagal memuat informasi: ${snapshot.error}'),
+              );
+            }
+
+            final infoList = snapshot.data ?? const <Map<String, dynamic>>[];
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),

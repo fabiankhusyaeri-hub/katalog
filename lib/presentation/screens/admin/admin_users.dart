@@ -404,10 +404,18 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                             ),
                           ],
                           child: Chip(
-                            label: Text(role),
+                            label: Text(
+                              role,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                             backgroundColor: role.toLowerCase() == 'admin'
-                                ? Colors.red.shade100
-                                : Colors.blue.shade100,
+                                ? Colors.red.shade600
+                                : Colors.blue.shade600,
+                            side: BorderSide.none,
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
                           ),
                         ),
                       ],

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/material.dart';
 
@@ -57,12 +58,50 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  String _normalizeRoleName(String role) {
+    final normalized = role.trim();
+    if (normalized.toLowerCase() == 'superadmin') return 'super_admin';
+    if (normalized.toLowerCase() == 'super_admin') return 'super_admin';
+    if (normalized.toLowerCase() == 'hubin') return 'super_admin';
+    return normalized.toLowerCase();
+  }
+
+  Future<void> _recordAccessLog({
+    required String email,
+    required String role,
+    required String action,
+    required String method,
+    String? description,
+  }) async {
+    try {
+      final uid = fb.FirebaseAuth.instance.currentUser?.uid ?? user?.id ?? '';
+      await FirebaseFirestore.instance.collection('access_audit').add({
+        'userId': uid,
+        'email': email,
+        'role': _normalizeRoleName(role),
+        'action': action,
+        'method': method,
+        'description': description ?? 'Akses sistem',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // ignore logging errors; app should still work if audit storage is unavailable
+    }
+  }
+
   Future<void> login({required String email, required String password}) async {
     try {
       final u = await _loginUseCase.call(email: email, password: password);
       user = u;
       status = AuthStatus.authenticated;
       notifyListeners();
+      await _recordAccessLog(
+        email: email,
+        role: u.role.name,
+        action: 'login',
+        method: 'email_password',
+        description: 'Login berhasil melalui email dan password',
+      );
     } catch (e) {
       status = AuthStatus.unauthenticated;
       notifyListeners();
@@ -117,6 +156,13 @@ class AuthProvider extends ChangeNotifier {
       user = u;
       status = AuthStatus.authenticated;
       notifyListeners();
+      await _recordAccessLog(
+        email: u.email,
+        role: u.role.name,
+        action: 'login',
+        method: 'google',
+        description: 'Login berhasil menggunakan Google',
+      );
     } catch (e) {
       status = AuthStatus.unauthenticated;
       notifyListeners();

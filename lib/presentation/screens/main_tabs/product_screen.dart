@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/cart_provider.dart';
 import 'cart_screen.dart';
 
@@ -11,15 +13,34 @@ class ProductScreen extends StatefulWidget {
 }
 
 class _ProductScreenState extends State<ProductScreen> {
-  final List<Map<String, dynamic>> _products = List.generate(
-    12,
-    (i) => {
-      'id': i,
-      'title': 'Produk ${i + 1}',
-      'price': 5000 + i * 1000,
-      'stock': i % 4 == 0 ? 0 : (5 + i),
-    },
-  );
+  String _selectedCategory = 'Semua';
+
+  List<Map<String, dynamic>> _mapProducts(QuerySnapshot<Object?> snapshot) {
+    final products = snapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final stock = (data['stock'] is num)
+          ? (data['stock'] as num).toInt()
+          : int.tryParse(data['stock']?.toString() ?? '') ?? 0;
+      final price = (data['price'] is num)
+          ? (data['price'] as num).toInt()
+          : int.tryParse(data['price']?.toString() ?? '') ?? 0;
+
+      return {
+        'id': doc.id.hashCode.abs(),
+        'firestoreId': doc.id,
+        'title': (data['name'] ?? 'Produk').toString(),
+        'category': (data['category'] ?? 'Umum').toString(),
+        'description': (data['description'] ?? '').toString(),
+        'price': price,
+        'stock': stock,
+      };
+    }).toList();
+
+    products.sort(
+      (a, b) => (a['title'] as String).compareTo(b['title'] as String),
+    );
+    return products;
+  }
 
   void _openProductDetail(Map<String, dynamic> product) {
     showModalBottomSheet(
@@ -27,70 +48,78 @@ class _ProductScreenState extends State<ProductScreen> {
       isScrollControlled: true,
       builder: (c) => Padding(
         padding: MediaQuery.of(c).viewInsets,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                product['title'],
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text('Harga: Rp${product['price']}'),
-              const SizedBox(height: 8),
-              Text(
-                'Stok: ${product['stock']}',
-                style: TextStyle(
-                  color: product['stock'] == 0 ? Colors.red : Colors.green,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: product['stock'] == 0
-                          ? null
-                          : () {
-                              Provider.of<CartProvider>(
-                                context,
-                                listen: false,
-                              ).addItem(
-                                product['id'] as int,
-                                product['title'] as String,
-                                product['price'] as int,
-                              );
-                              Navigator.of(context).pop();
-                            },
-                      icon: const Icon(Icons.add_shopping_cart),
-                      label: const Text('Add to Cart'),
-                    ),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product['title'] as String,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: product['stock'] == 0
-                          ? null
-                          : () {
-                              Navigator.of(context).pop();
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const CartScreen(),
-                                ),
-                              );
-                            },
-                      child: const Text('Checkout Now (QRIS)'),
-                    ),
-                  ),
+                ),
+                if ((product['description'] as String).isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(product['description'] as String),
                 ],
-              ),
-              const SizedBox(height: 12),
-            ],
+                const SizedBox(height: 8),
+                Text('Kategori: ${product['category']}'),
+                const SizedBox(height: 8),
+                Text('Harga: Rp${product['price']}'),
+                const SizedBox(height: 8),
+                Text(
+                  'Stok: ${product['stock']}',
+                  style: TextStyle(
+                    color: product['stock'] == 0 ? Colors.red : Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: product['stock'] == 0
+                            ? null
+                            : () {
+                                Provider.of<CartProvider>(
+                                  context,
+                                  listen: false,
+                                ).addItem(
+                                  product['id'] as int,
+                                  product['title'] as String,
+                                  product['price'] as int,
+                                );
+                                Navigator.of(context).pop();
+                              },
+                        icon: const Icon(Icons.add_shopping_cart),
+                        label: const Text('Add to Cart'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: product['stock'] == 0
+                            ? null
+                            : () {
+                                Navigator.of(context).pop();
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const CartScreen(),
+                                  ),
+                                );
+                              },
+                        child: const Text('Checkout Now (QRIS)'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
           ),
         ),
       ),
@@ -147,111 +176,156 @@ class _ProductScreenState extends State<ProductScreen> {
           label: Text('Keranjang (${cart.totalCount})'),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: const [
-                  Chip(label: Text('Semua')),
-                  SizedBox(width: 8),
-                  Chip(label: Text('Alat Tulis')),
-                  SizedBox(width: 8),
-                  Chip(label: Text('Seragam')),
-                  SizedBox(width: 8),
-                  Chip(label: Text('Elektronik')),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.78,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+      body: StreamBuilder<QuerySnapshot<Object?>>(
+        stream: FirebaseFirestore.instance.collection('products').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final allProducts = snapshot.data == null
+              ? <Map<String, dynamic>>[]
+              : _mapProducts(snapshot.data!);
+
+          final categories = <String>{
+            'Semua',
+            ...allProducts.map((p) => p['category'] as String),
+          }.toList();
+
+          if (!categories.contains(_selectedCategory)) {
+            _selectedCategory = 'Semua';
+          }
+
+          final filteredProducts = _selectedCategory == 'Semua'
+              ? allProducts
+              : allProducts
+                    .where((p) => p['category'] == _selectedCategory)
+                    .toList();
+
+          return Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: categories.map((category) {
+                      final isSelected = _selectedCategory == category;
+                      return ChoiceChip(
+                        label: Text(category),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          setState(() {
+                            _selectedCategory = category;
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
                 ),
-                itemCount: _products.length,
-                itemBuilder: (context, index) {
-                  final p = _products[index];
-                  return GestureDetector(
-                    onTap: () => _openProductDetail(p),
-                    child: Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.image,
-                                  size: 56,
-                                  color: Colors.black26,
-                                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: filteredProducts.isEmpty
+                      ? const Center(
+                          child: Text('Belum ada produk yang tersedia'),
+                        )
+                      : GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 0.78,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              p['title'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Rp${p['price']}',
-                              style: const TextStyle(color: Colors.green),
-                            ),
-                            const SizedBox(height: 6),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
+                          itemCount: filteredProducts.length,
+                          itemBuilder: (context, index) {
+                            final p = filteredProducts[index];
+                            return GestureDetector(
+                              onTap: () => _openProductDetail(p),
+                              child: Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: p['stock'] == 0
-                                      ? Colors.red.shade100
-                                      : Colors.green.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  p['stock'] == 0
-                                      ? 'Habis'
-                                      : 'Stok ${p['stock']}',
-                                  style: TextStyle(
-                                    color: p['stock'] == 0
-                                        ? Colors.red
-                                        : Colors.green.shade700,
-                                    fontSize: 12,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          width: double.infinity,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade200,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.image,
+                                            size: 56,
+                                            color: Colors.black26,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        p['title'] as String,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Rp${p['price']}',
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: p['stock'] == 0
+                                                ? Colors.red.shade100
+                                                : Colors.green.shade100,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            p['stock'] == 0
+                                                ? 'Habis'
+                                                : 'Stok ${p['stock']}',
+                                            style: TextStyle(
+                                              color: p['stock'] == 0
+                                                  ? Colors.red
+                                                  : Colors.green.shade700,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
