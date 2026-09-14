@@ -307,10 +307,12 @@ class _HomeSiswaScreenState extends State<HomeSiswaScreen> {
                           children:
                               [
                                 'Semua',
-                                'Elektronika',
-                                'TKJ',
                                 'RPL',
-                                'Tata Boga',
+                                'TKJ',
+                                'MP',
+                                'TJA',
+                                'Animasi',
+                                'DKV',
                               ].map((c) {
                                 final active = c == cat;
                                 return Padding(

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/status_bar.dart';
-
 class WelcomeScreenWidget extends StatefulWidget {
   final VoidCallback onEnter;
   const WelcomeScreenWidget({super.key, required this.onEnter});
@@ -17,9 +15,9 @@ class _WelcomeScreenWidgetState extends State<WelcomeScreenWidget> {
   static const List<_OnboardingData> _slides = [
     _OnboardingData(
       icon: Icons.school_rounded,
-      title: 'SMK Nusantara 1',
+      title: 'SMK TI GARUDA NUSANTARA CIMAHI',
       subtitle:
-          'Tempat informasi sekolah, katalog produk, dan kebutuhan siswa dalam satu aplikasi.',
+          'Sekolah dengan jurusan RPL, TKJ, MP, TJA, Animasi, dan DKV dalam satu aplikasi.',
       accent: Color(0xFF7DD3FC),
     ),
     _OnboardingData(
@@ -72,8 +70,7 @@ class _WelcomeScreenWidgetState extends State<WelcomeScreenWidget> {
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
             child: Column(
               children: [
-                const StatusBar(light: true),
-                const SizedBox(height: 18),
+                const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -87,11 +84,13 @@ class _WelcomeScreenWidgetState extends State<WelcomeScreenWidget> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Katalog Sekolah',
+                  'SMK TI GARUDA NUSANTARA\nCIMAHI',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.w800,
+                    height: 1.2,
                   ),
                 ),
                 const SizedBox(height: 18),

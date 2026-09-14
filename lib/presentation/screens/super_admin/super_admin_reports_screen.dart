@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import 'super_admin_order_detail_screen.dart';
 
@@ -129,12 +132,92 @@ class _SuperAdminReportsScreenState extends State<SuperAdminReportsScreen> {
     });
   }
 
+  Future<void> _printReport() async {
+    final reportsData = await _loadReports();
+    final filteredReports = _filterReports(
+      (reportsData['reports'] as List?) ?? const [],
+    );
+
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          final rows = <List<String>>[
+            ['Order ID', 'Status', 'Total', 'Produk', 'Tanggal'],
+            ...filteredReports.map((item) {
+              final createdAt = item['createdAt'] as DateTime?;
+              return [
+                (item['id'] ?? '').toString(),
+                (item['status'] ?? '').toString(),
+                'Rp${item['total'] ?? 0}',
+                (item['items'] ?? '').toString(),
+                createdAt != null ? _formatDate(createdAt.toLocal()) : '-',
+              ];
+            }),
+          ];
+
+          return [
+            pw.Text(
+              'Laporan Super Admin',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 22),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              'Periode: ${_formatDate(_fromDate)} - ${_formatDate(_toDate)}',
+            ),
+            pw.SizedBox(height: 18),
+            if (rows.length > 1)
+              pw.TableHelper.fromTextArray(
+                headers: rows.first,
+                data: rows.skip(1).toList(),
+                border: null,
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.white,
+                ),
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.blue900,
+                ),
+                cellStyle: const pw.TextStyle(fontSize: 9),
+                cellPadding: const pw.EdgeInsets.all(6),
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(1.4),
+                  1: const pw.FlexColumnWidth(1.0),
+                  2: const pw.FlexColumnWidth(1.0),
+                  3: const pw.FlexColumnWidth(3.0),
+                  4: const pw.FlexColumnWidth(1.2),
+                },
+              )
+            else
+              pw.Text('Tidak ada data laporan yang sesuai dengan filter.'),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Laporan berhasil dicetak.')));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Laporan'),
         actions: [
+          IconButton(
+            tooltip: 'Cetak laporan',
+            icon: const Icon(Icons.print_outlined),
+            onPressed: _printReport,
+          ),
           IconButton(
             tooltip: 'Export laporan',
             icon: const Icon(Icons.file_download_outlined),

@@ -75,17 +75,19 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Katalog Sekolah',
+                  'SMK TI GARUDA NUSANTARA\nCIMAHI',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 30,
+                    fontSize: 26,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
                     letterSpacing: 0.5,
+                    height: 1.2,
                   ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Informasi, produk, dan layanan siswa',
+                  'RPL • TKJ • MP • TJA • Animasi • DKV',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white70, fontSize: 15),
                 ),

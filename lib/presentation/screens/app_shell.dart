@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/auth_provider.dart';
 import '../../domain/entities/user.dart' as domain;
@@ -49,7 +50,15 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenOnboarding = prefs.getBool('seen_onboarding') ?? false;
+      if (!mounted) return;
+
+      setState(() {
+        screen = hasSeenOnboarding ? AppScreen.login : AppScreen.welcome;
+      });
+
       final auth = Provider.of<AuthProvider>(context, listen: false);
       auth.restoreSession();
     });
@@ -91,7 +100,14 @@ class _AppShellState extends State<AppShell> {
 
     switch (effective) {
       case AppScreen.welcome:
-        return WelcomeScreenWidget(onEnter: () => go(AppScreen.login));
+        return WelcomeScreenWidget(
+          onEnter: () async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('seen_onboarding', true);
+            if (!mounted) return;
+            go(AppScreen.login);
+          },
+        );
       case AppScreen.login:
         return LoginScreen(
           go: (s) {

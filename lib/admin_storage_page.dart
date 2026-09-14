@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import 'services/wa_service.dart';
+
 class AdminStoragePage extends StatefulWidget {
   const AdminStoragePage({super.key});
 
@@ -174,13 +176,31 @@ class _AdminStoragePageState extends State<AdminStoragePage> {
     if (result != true) return;
 
     try {
+      final name = nameController.text.trim();
+      final stock = int.parse(stockController.text.trim());
+      final location = locationController.text.trim();
+
       await _firestore.collection('warehouse_storage').add({
-        'name': nameController.text.trim(),
-        'stock': int.parse(stockController.text.trim()),
-        'location': locationController.text.trim(),
+        'name': name,
+        'stock': stock,
+        'location': location,
         'status': 'warehouse',
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      try {
+        await WaService.sendNotification(
+          'Stok Gudang Baru\nNama Barang: $name\nJumlah Pcs: $stock\nLokasi Rak: $location',
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Stok tersimpan, gagal kirim notifikasi WA: $e'),
+          ),
+        );
+        return;
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -312,6 +332,22 @@ class _AdminStoragePageState extends State<AdminStoragePage> {
               'status': 'published',
               'updatedAt': FieldValue.serverTimestamp(),
             });
+      }
+
+      try {
+        await WaService.sendNotification(
+          'Produk Baru Dirilis\nNama Produk: $name\nHarga Jual: Rp$price\nStok Dirilis: $stock',
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Produk berhasil dirilis, gagal kirim notifikasi WA: $e',
+            ),
+          ),
+        );
+        return;
       }
 
       if (!mounted) return;

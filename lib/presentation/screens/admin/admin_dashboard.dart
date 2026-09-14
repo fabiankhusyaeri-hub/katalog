@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../admin_storage_page.dart';
 import '../../providers/auth_provider.dart';
 import '../app_shell.dart';
 import 'admin_information.dart';
@@ -251,9 +252,9 @@ class AdminDashboardScreen extends StatelessWidget {
               const SizedBox(height: 16),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final cardWidth = (constraints.maxWidth - 24) / 3;
+                  final cardWidth = (constraints.maxWidth - 36) / 2;
                   return SizedBox(
-                    height: 150,
+                    height: 330,
                     child: Wrap(
                       spacing: 12,
                       runSpacing: 12,
@@ -285,6 +286,22 @@ class AdminDashboardScreen extends StatelessWidget {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (_) => const AdminProductsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        SizedBox(
+                          width: cardWidth,
+                          child: _AdminQuickActionCard(
+                            icon: Icons.storefront_outlined,
+                            title: 'Stok Gudang',
+                            subtitle: 'Barang masuk',
+                            color: Colors.amber,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const AdminStoragePage(),
                                 ),
                               );
                             },
