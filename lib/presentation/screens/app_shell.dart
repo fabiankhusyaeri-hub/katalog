@@ -70,7 +70,7 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
-  Widget renderScreen() {
+  AppScreen _effectiveScreen() {
     final auth = Provider.of<AuthProvider>(context);
     AppScreen effective = screen;
     if (auth.status == AuthStatus.authenticated && auth.user != null) {
@@ -83,6 +83,11 @@ class _AppShellState extends State<AppShell> {
         effective = AppScreen.siswaHome;
       }
     }
+    return effective;
+  }
+
+  Widget renderScreen() {
+    final effective = _effectiveScreen();
 
     switch (effective) {
       case AppScreen.welcome:
@@ -155,6 +160,29 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: renderScreen());
+    final currentScreen = _effectiveScreen();
+
+    return Scaffold(
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final slideAnimation = Tween<Offset>(
+            begin: const Offset(0.08, 0),
+            end: Offset.zero,
+          ).chain(CurveTween(curve: Curves.easeOutCubic)).animate(animation);
+
+          return SlideTransition(
+            position: slideAnimation,
+            child: FadeTransition(opacity: animation, child: child),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(currentScreen),
+          child: renderScreen(),
+        ),
+      ),
+    );
   }
 }

@@ -15,6 +15,49 @@ class ProductScreen extends StatefulWidget {
 class _ProductScreenState extends State<ProductScreen> {
   String _selectedCategory = 'Semua';
 
+  Widget _buildProductImage(String? imageUrl, {double? width, double? height}) {
+    final resolvedUrl = (imageUrl ?? '').trim();
+    final imageWidget =
+        resolvedUrl.isNotEmpty &&
+            (resolvedUrl.startsWith('http://') ||
+                resolvedUrl.startsWith('https://'))
+        ? Image.network(
+            resolvedUrl,
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Image.asset(
+              'lib/images/logoicon-removebg-preview.png',
+              width: width,
+              height: height,
+              fit: BoxFit.cover,
+            ),
+          )
+        : Image.asset(
+            'lib/images/logoicon-removebg-preview.png',
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+          );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: imageWidget,
+    );
+  }
+
+  String _productStatusLabel(String? rawStatus) {
+    return (rawStatus ?? '').toLowerCase() == 'published'
+        ? 'Published'
+        : 'Draft';
+  }
+
+  Color _productStatusColor(String? rawStatus) {
+    return (rawStatus ?? '').toLowerCase() == 'published'
+        ? Colors.green
+        : Colors.orange;
+  }
+
   List<Map<String, dynamic>> _mapProducts(QuerySnapshot<Object?> snapshot) {
     final products = snapshot.docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
@@ -31,8 +74,10 @@ class _ProductScreenState extends State<ProductScreen> {
         'title': (data['name'] ?? 'Produk').toString(),
         'category': (data['category'] ?? 'Umum').toString(),
         'description': (data['description'] ?? '').toString(),
+        'imageUrl': (data['imageUrl'] ?? data['image'] ?? '').toString(),
         'price': price,
         'stock': stock,
+        'status': (data['status'] ?? 'published').toString(),
       };
     }).toList();
 
@@ -55,11 +100,42 @@ class _ProductScreenState extends State<ProductScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 200,
+                  child: _buildProductImage(
+                    product['imageUrl']?.toString(),
+                    width: double.infinity,
+                    height: 200,
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Text(
                   product['title'] as String,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _productStatusColor(
+                      product['status']?.toString(),
+                    ).withAlpha(30),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    _productStatusLabel(product['status']?.toString()),
+                    style: TextStyle(
+                      color: _productStatusColor(product['status']?.toString()),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
                 if ((product['description'] as String).isNotEmpty) ...[
@@ -256,19 +332,10 @@ class _ProductScreenState extends State<ProductScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
-                                        child: Container(
+                                        child: _buildProductImage(
+                                          p['imageUrl']?.toString(),
                                           width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade200,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.image,
-                                            size: 56,
-                                            color: Colors.black26,
-                                          ),
+                                          height: double.infinity,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -276,6 +343,33 @@ class _ProductScreenState extends State<ProductScreen> {
                                         p['title'] as String,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: _productStatusColor(
+                                            p['status']?.toString(),
+                                          ).withAlpha(30),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _productStatusLabel(
+                                            p['status']?.toString(),
+                                          ),
+                                          style: TextStyle(
+                                            color: _productStatusColor(
+                                              p['status']?.toString(),
+                                            ),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: 4),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 // provider already imported above
-import 'presentation/screens/app_shell.dart';
+import 'presentation/screens/splash_screen.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
         title: 'Katalog App',
         debugShowCheckedModeBanner: false,
         theme: appTheme,
-        home: const AppShell(),
+        home: const SplashScreen(),
       ),
     );
   }

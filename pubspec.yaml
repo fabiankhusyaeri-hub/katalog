@@ -37,16 +37,20 @@ dependencies:
   firebase_core: ^3.12.1
   firebase_auth: ^5.5.1
   cloud_firestore: ^5.6.5
+  firebase_storage: ^12.4.1
   google_sign_in: ^6.2.2
   provider: ^6.0.5
   fl_chart: ^0.69.0
   google_fonts: ^6.0.0
   url_launcher: ^6.3.2
+  image_picker: ^1.0.8
+  mobile_scanner: ^7.4.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
+  flutter_launcher_icons: ^0.14.3
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -59,11 +63,21 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  uses-material-design: true
+
+  assets:
+    - lib/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "lib/images/logoicon-removebg-preview.png"
+  adaptive_icon_background: "#0B1020"
+  adaptive_icon_foreground: "lib/images/logoicon-removebg-preview.png"
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
-  uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:
