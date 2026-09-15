@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../../services/wa_service.dart';
+
 class AdminInformationScreen extends StatefulWidget {
   const AdminInformationScreen({super.key});
 
@@ -108,10 +110,26 @@ class _AdminInformationScreenState extends State<AdminInformationScreen> {
           .doc(item['id'] as String)
           .update(payload);
     } else {
+      final title = (result['title'] ?? '').toString();
+      final content = (result['content'] ?? '').toString();
+
       await FirebaseFirestore.instance.collection('student_form_info').add({
         ...payload,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      final waResult = await WaService.sendNotification(
+        'Informasi Baru\nJudul: $title\nIsi: $content',
+      );
+
+      if (!waResult) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Informasi tersimpan, gagal kirim WA')),
+        );
+      } else {
+        debugPrint('WA notification sent for new admin information');
+      }
     }
 
     if (mounted) {

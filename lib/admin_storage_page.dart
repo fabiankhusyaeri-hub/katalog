@@ -188,18 +188,19 @@ class _AdminStoragePageState extends State<AdminStoragePage> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      try {
-        await WaService.sendNotification(
-          'Stok Gudang Baru\nNama Barang: $name\nJumlah Pcs: $stock\nLokasi Rak: $location',
-        );
-      } catch (e) {
+      final waResult = await WaService.sendNotification(
+        'Stok Gudang Baru\nNama Barang: $name\nJumlah Pcs: $stock\nLokasi Rak: $location',
+      );
+
+      if (!waResult) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Stok tersimpan, gagal kirim notifikasi WA: $e'),
+          const SnackBar(
+            content: Text('Stok tersimpan, gagal kirim notifikasi WA'),
           ),
         );
-        return;
+      } else {
+        debugPrint('WA notification sent for new warehouse stock');
       }
 
       if (!mounted) return;

@@ -8,7 +8,7 @@ class WaService {
   static const String _authorization = 'vvLu1CSUu6RSFcTRuCUu';
   static const String _target = '081546487201';
 
-  static Future<void> sendNotification(String message) async {
+  static Future<bool> sendNotification(String message) async {
     try {
       final response = await http.post(
         Uri.parse(_apiUrl),
@@ -25,11 +25,14 @@ class WaService {
       debugPrint('Fonnte response body: $responseBody');
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception('Fonnte error ${response.statusCode}: $responseBody');
+        debugPrint('Fonnte returned non-2xx status');
+        return false;
       }
+
+      return true;
     } catch (e) {
       debugPrint('Fonnte sendNotification error: $e');
-      throw Exception('Gagal mengirim notifikasi WA: $e');
+      return false;
     }
   }
 }
